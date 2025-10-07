@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>SCAMPER</title>
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+1p:wght@400;700&display=swap" rel="stylesheet">
+<link rel="icon" href="https://mikatea.sakura.ne.jp/Adeline/auth/favicon.ico" type="image/x-icon">
+<style>
+    body { font-family: 'M PLUS 1p', sans-serif; background: #1a202c; color: #fefefe; padding: 2rem; text-align: center; }
+    .card { background: rgba(0,0,0,0.5); padding: 2rem; border-radius: 12px; max-width: 900px; margin: 1rem auto; }
+    button { margin: 0.2rem; padding: 0.6rem 1.2rem; font-size: 0.9rem; font-weight: 600; border: none; border-radius: 6px;
+             cursor: pointer; }
+    .btn-save { background: linear-gradient(135deg,#63b3ed,#3182ce); color: #fff; }
+    .btn-edit { background: #f6ad55; color: #1a202c; }
+    .btn-delete { background: #e53e3e; color: #fff; }
+    .btn-ai { background: #48bb78; color: #fff; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    textarea { width: 100%; padding: 1rem; border-radius: 8px; border: none; margin-top: 1rem;
+               font-size: 1rem; font-family: inherit; resize: vertical; min-height: 80px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { padding: 0.6rem; border-bottom: 1px solid rgba(255,255,255,0.2); }
+    th { text-align: left; color: #90cdf4; }
+    td.actions { text-align: right; }
+    pre { text-align:left; white-space: pre-wrap; background:rgba(255,255,255,0.1); padding:1rem; border-radius:8px; }
+    
+    .idea-row { cursor: pointer; transition: background 0.2s; }
+    .idea-row:hover { background: rgba(99,179,237,0.1); }
+    .ai-suggestions { 
+        background: rgba(72,187,120,0.15); 
+        padding: 1rem; 
+        margin: 0.5rem 0;
+        border-left: 3px solid #48bb78;
+        border-radius: 4px;
+        display: none;
+    }
+    .ai-suggestions.show { display: block; }
+    .ai-suggestions h4 { margin: 0 0 0.5rem 0; color: #68d391; font-size: 0.9rem; }
+    .ai-loading { color: #90cdf4; font-style: italic; }
+    .toggle-icon { 
+        display: inline-block; 
+        transition: transform 0.2s;
+        margin-right: 0.5rem;
+        font-size: 0.8rem;
+    }
+    .toggle-icon.open { transform: rotate(90deg); }
+</style>
+</head>
+
+<body>
+<h1>💡 SCAMPER アイデア発想</h1>
+
+<div id="problemCard" class="card">
+    <h2>課題定義</h2>
+    <p id="definitionText">課題を読み込み中...</p>
+</div>
+
+<div id="gachaCard" class="card">
+    <h2 id="scamperTitle">🎲 ガチャを回そう！</h2>
+    <p id="scamperPrompt">SCAMPERメソッドの切り口が表示されます</p>
+    <button class="btn-save" id="gachaBtn">ガチャを回す</button>
+</div>
+
+<div id="aiAskCard" class="card">
+    <h2>🧩 AIに直接アイデアを聞く</h2>
+    <textarea id="aiAskInput" placeholder="例: ○○を改善するアイデアを3つ教えて" rows="3"></textarea>
+    <button class="btn-ai" id="aiAskBtn">AIに聞く</button>
+    <div id="aiAskResult" style="margin-top:1rem; display:none;">
+        <h3 style="color:#68d391; font-size:1rem;">💡 AI提案</h3>
+        <div id="aiAskContent" style="background:rgba(72,187,120,0.15); padding:1rem; border-radius:8px; border-left:3px solid #48bb78;"></div>
+    </div>
+</div>
+
+<div id="ideaCard" class="card" style="display:none;">
+    <h2>✏️ アイデアを書こう</h2>
+    <p id="currentMethod"></p>
+    <textarea id="ideaInput" placeholder="アイデアを入力..."></textarea>
+    <button class="btn-save" id="saveIdeaBtn">保存する</button>
+</div>
+
+<div id="listCard" class="card" style="display:none;">
+    <h2>💭 保存したアイデア</h2>
+    <p style="font-size: 0.9rem; color: #90cdf4;">💡 アイデアをクリックするとAI補完結果が表示されます</p>
+    <table>
+        <thead>
+            <tr><th>方法</th><th>アイデア</th><th>操作</th></tr>
+        </thead>
+        <tbody id="ideaList"></tbody>
+    </table>
+    <button class="btn-ai" id="summarizeBtn">🗂 AIで整理する</button>
+    <div id="summaryBox" style="margin-top:1rem; display:none;">
+        <h3>整理結果</h3>
+        <pre id="summaryText"></pre>
+    </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+import { getFirestore, doc, getDoc, collection, addDoc, query, orderBy, onSnapshot, updateDoc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+import { getAuth, onAuthStateChanged, signInAnonymously, signOut } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
+
+// === Firebase設定 ===
+// ★githubアップ時に忘れず消すこと！★
+const firebaseConfig = {
+    apiKey: "",
+    authDomain: "",
+    projectId: "",
+    storageBucket: "",
+    messagingSenderId: "",
+    appId: "",
+    measurementId: ""
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+let currentUser = null;
+let currentMethod = null;
+let editId = null;
+
+// === SCAMPERメソッド一覧 ===
+const scamperList = [
+    {title:"S: Substitute (代替する)", prompt:"別の材料や方法に置き換えられる？"},
+    {title:"C: Combine (組み合わせる)", prompt:"他のアイデアや機能と組み合わせられる？"},
+    {title:"A: Adapt (応用する)", prompt:"他分野のやり方を応用できないか？"},
+    {title:"M: Modify/Magnify (修正・拡大)", prompt:"一部を強調・拡大したらどうなる？"},
+    {title:"P: Put to other use (他用途に転用)", prompt:"別の場面や用途で使えないか？"},
+    {title:"E: Eliminate (削除する)", prompt:"取り除いても成立する部分は？"},
+    {title:"R: Reverse/Rearrange (逆転・並べ替え)", prompt:"順序や視点を逆にしたら？"}
+];
+
+// === OpenAI呼び出し（PHP経由） ===
+async function callAI(prompt) {
+    try {
+        const response = await fetch('./scamper_api.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ prompt })
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTPエラー: ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        if (!data.success) {
+            throw new Error(data.error || 'API呼び出しに失敗しました');
+        }
+
+        return data.content;
+    } catch (error) {
+        console.error('AI呼び出しエラー:', error);
+        return `エラーが発生しました: ${error.message}`;
+    }
+}
+
+// === ログイン監視 ===
+onAuthStateChanged(auth, async (user) => {
+    if (!user) { 
+        await signInAnonymously(auth); 
+        return; 
+    }
+    currentUser = user;
+    loadProblem();
+    loadIdeas();
+});
+
+// === 課題定義読込 ===
+async function loadProblem() {
+    try {
+        const docRef = doc(db, "users", currentUser.uid, "definitions", "current");
+        const docSnap = await getDoc(docRef);
+        document.getElementById("definitionText").textContent =
+            docSnap.exists() ? (docSnap.data().definition || "課題が未入力です") : "課題が保存されていません";
+    } catch (error) {
+        console.error('課題読込エラー:', error);
+        document.getElementById("definitionText").textContent = "読込に失敗しました";
+    }
+}
+
+// === ガチャ ===
+document.getElementById("gachaBtn").addEventListener("click", () => {
+    const choice = scamperList[Math.floor(Math.random()*scamperList.length)];
+    currentMethod = choice.title;
+    document.getElementById("scamperTitle").textContent = choice.title;
+    document.getElementById("scamperPrompt").textContent = choice.prompt;
+    document.getElementById("ideaCard").style.display = "block";
+    document.getElementById("currentMethod").textContent = "方法: " + choice.title;
+});
+
+// === アイデア保存（AI補完付き） ===
+document.getElementById("saveIdeaBtn").addEventListener("click", async () => {
+    const idea = document.getElementById("ideaInput").value.trim();
+    if (!idea) {
+        alert('アイデアを入力してください');
+        return;
+    }
+
+    const saveBtn = document.getElementById("saveIdeaBtn");
+    saveBtn.disabled = true;
+    saveBtn.textContent = '保存中...';
+
+    try {
+        let ref;
+        if (editId) {
+            ref = doc(db, "users", currentUser.uid, "scamperIdeas", editId);
+            await updateDoc(ref, { idea });
+            editId = null;
+        } else {
+            ref = await addDoc(collection(db, "users", currentUser.uid, "scamperIdeas"), {
+                method: currentMethod,
+                idea,
+                createdAt: new Date()
+            });
+
+            // AI補完を非同期で実行
+            try {
+                saveBtn.textContent = 'AI補完中...';
+                const aiText = await callAI(
+                    `SCAMPERメソッド「${currentMethod}」の発想で次のアイデアを3つ補完してください:\n${idea}`
+                );
+                
+                await addDoc(
+                    collection(db, "users", currentUser.uid, "scamperIdeas", ref.id, "aiSuggestions"),
+                    {
+                        suggestion: aiText,
+                        createdAt: new Date()
+                    }
+                );
+            } catch (aiError) {
+                console.error('AI補完エラー:', aiError);
+            }
+        }
+
+        document.getElementById("ideaInput").value = "";
+        alert('保存しました！');
+        
+    } catch (error) {
+        console.error('保存エラー:', error);
+        alert('保存に失敗しました: ' + error.message);
+    } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = '保存する';
+    }
+});
+
+// === アイデア一覧 ===
+function loadIdeas() {
+    const q = query(collection(db, "users", currentUser.uid, "scamperIdeas"), orderBy("createdAt", "desc"));
+    onSnapshot(q, (snapshot) => {
+        const list = document.getElementById("ideaList");
+        list.innerHTML = "";
+        
+        snapshot.forEach(docSnap => {
+            const data = docSnap.data();
+            const ideaId = docSnap.id;
+            
+            // アイデア行
+            const tr = document.createElement("tr");
+            tr.className = "idea-row";
+            tr.dataset.ideaId = ideaId;
+            tr.innerHTML = `
+                <td><span class="toggle-icon">▶</span>${data.method}</td>
+                <td>${data.idea}</td>
+                <td class="actions">
+                    <button class="btn-edit" data-id="${ideaId}">編集</button>
+                    <button class="btn-delete" data-id="${ideaId}">削除</button>
+                </td>`;
+            list.appendChild(tr);
+            
+            // AI補完表示行
+            const suggestionTr = document.createElement("tr");
+            suggestionTr.innerHTML = `
+                <td colspan="3">
+                    <div class="ai-suggestions" id="ai-${ideaId}">
+                        <h4>🤖 AI補完アイデア</h4>
+                        <div class="ai-loading">読み込み中...</div>
+                    </div>
+                </td>`;
+            list.appendChild(suggestionTr);
+            
+            // クリックで展開/折りたたみ
+            tr.addEventListener("click", async (e) => {
+                if (e.target.closest('button')) return; // ボタンクリックは無視
+                
+                const aiDiv = document.getElementById(`ai-${ideaId}`);
+                const icon = tr.querySelector('.toggle-icon');
+                
+                if (aiDiv.classList.contains('show')) {
+                    aiDiv.classList.remove('show');
+                    icon.classList.remove('open');
+                } else {
+                    // 他を閉じる
+                    document.querySelectorAll('.ai-suggestions').forEach(d => d.classList.remove('show'));
+                    document.querySelectorAll('.toggle-icon').forEach(i => i.classList.remove('open'));
+                    
+                    aiDiv.classList.add('show');
+                    icon.classList.add('open');
+                    
+                    // AI補完を読み込む
+                    await loadAISuggestions(ideaId);
+                }
+            });
+        });
+
+        // 編集・削除ボタン
+        document.querySelectorAll(".btn-edit").forEach(btn => {
+            btn.addEventListener("click", async (e) => {
+                e.stopPropagation();
+                const id = e.target.dataset.id;
+                const ref = doc(db, "users", currentUser.uid, "scamperIdeas", id);
+                const snap = await getDoc(ref);
+                if (snap.exists()) {
+                    document.getElementById("ideaInput").value = snap.data().idea;
+                    currentMethod = snap.data().method;
+                    editId = id;
+                    document.getElementById("ideaCard").style.display = "block";
+                    document.getElementById("currentMethod").textContent = "方法: " + snap.data().method + " (編集中)";
+                }
+            });
+        });
+        
+        document.querySelectorAll(".btn-delete").forEach(btn => {
+            btn.addEventListener("click", async (e) => {
+                e.stopPropagation();
+                if (confirm('削除してもよろしいですか？')) {
+                    const id = e.target.dataset.id;
+                    await deleteDoc(doc(db, "users", currentUser.uid, "scamperIdeas", id));
+                }
+            });
+        });
+
+        if (!snapshot.empty) document.getElementById("listCard").style.display = "block";
+    });
+}
+
+// === AI補完を読み込んで表示 ===
+async function loadAISuggestions(ideaId) {
+    const aiDiv = document.getElementById(`ai-${ideaId}`);
+    
+    try {
+        const suggestionsRef = collection(db, "users", currentUser.uid, "scamperIdeas", ideaId, "aiSuggestions");
+        const q = query(suggestionsRef, orderBy("createdAt", "desc"));
+        const snapshot = await getDocs(q);
+        
+        if (snapshot.empty) {
+            aiDiv.innerHTML = `
+                <h4>🤖 AI補完アイデア</h4>
+                <p style="color: #a0aec0;">まだAI補完が生成されていません</p>`;
+        } else {
+            const suggestions = [];
+            snapshot.forEach(doc => {
+                suggestions.push(doc.data().suggestion);
+            });
+            
+            aiDiv.innerHTML = `
+                <h4>🤖 AI補完アイデア</h4>
+                <pre style="background: rgba(0,0,0,0.3); padding: 0.8rem; border-radius: 6px; margin: 0;">${suggestions.join('\n\n---\n\n')}</pre>`;
+        }
+    } catch (error) {
+        console.error('AI補完読込エラー:', error);
+        aiDiv.innerHTML = `
+            <h4>🤖 AI補完アイデア</h4>
+            <p style="color: #fc8181;">読み込みに失敗しました</p>`;
+    }
+}
+
+// === AI要約・整理 ===
+document.getElementById("summarizeBtn").addEventListener("click", async () => {
+    const btn = document.getElementById("summarizeBtn");
+    btn.disabled = true;
+    btn.textContent = '整理中...';
+
+    try {
+        const snapshot = await getDocs(
+            collection(db, "users", currentUser.uid, "scamperIdeas")
+        );
+        
+        if (snapshot.empty) {
+            alert('アイデアがありません');
+            return;
+        }
+
+        const ideas = [];
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            ideas.push(`【${data.method}】${data.idea}`);
+        });
+
+        const aiSummary = await callAI(
+            `次のSCAMPERアイデアをカテゴリ分けし、実現可能性の高い順に整理してください:\n\n${ideas.join('\n')}`
+        );
+
+        document.getElementById("summaryText").textContent = aiSummary;
+        document.getElementById("summaryBox").style.display = "block";
+
+    } catch (error) {
+        console.error('整理エラー:', error);
+        alert('整理に失敗しました: ' + error.message);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '🗂 AIで整理する';
+    }
+});
+
+// === 「AIに聞く」ボタン ===
+document.getElementById("aiAskBtn").addEventListener("click", async () => {
+    const input = document.getElementById("aiAskInput").value.trim();
+    const resultDiv = document.getElementById("aiAskResult");
+    const contentDiv = document.getElementById("aiAskContent");
+
+    if (!input) {
+        alert("質問内容を入力してください");
+        return;
+    }
+
+    resultDiv.style.display = "block";
+    contentDiv.innerHTML = "<p class='ai-loading'>AIが考え中...</p>";
+
+    try {
+        const aiText = await callAI(input);
+        contentDiv.innerHTML = `<pre>${aiText}</pre>`;
+    } catch (error) {
+        contentDiv.innerHTML = `<p style="color:#fc8181;">エラー: ${error.message}</p>`;
+    }
+});
+
+// === アイドル検出（10分） ===
+let idleTimer;
+const IDLE_TIMEOUT = 1000 * 60 * 10;
+const resetIdleTimer = () => {
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(async () => {
+        await signOut(auth);
+        alert("10分間操作がなかったため自動ログアウトされました。");
+        location.href = "https://mikatea.sakura.ne.jp/Adeline/index/index.html";
+    }, IDLE_TIMEOUT);
+};
+["mousemove", "keydown", "click", "scroll"].forEach(evt => {
+    document.addEventListener(evt, resetIdleTimer, false);
+});
+resetIdleTimer();
+</script>
+</body>
+</html>

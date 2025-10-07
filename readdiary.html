@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="https://mikatea.sakura.ne.jp/Adeline/auth/favicon.ico" type="image/x-icon">
+    <title>日記を読む - Stamp Diary</title>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+1p:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'M+PLUS 1p', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+        }
+        header h1 {
+            color: #4a5568;
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        .back-link {
+            display: inline-block;
+            margin-top: 0.5rem;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        main {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        .filter-panel {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+        .filter-section {
+            margin-bottom: 1.5rem;
+        }
+        .filter-section:last-child {
+            margin-bottom: 0;
+        }
+        .filter-title {
+            font-weight: 700;
+            color: #4a5568;
+            margin-bottom: 0.75rem;
+            font-size: 1rem;
+        }
+        .emoji-filter {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .emoji-btn {
+            font-size: 1.5rem;
+            padding: 0.5rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .emoji-btn:hover {
+            background: rgba(102, 126, 234, 0.1);
+            border-color: #667eea;
+        }
+        .emoji-btn.active {
+            background: #667eea;
+            border-color: #667eea;
+            transform: scale(1.1);
+        }
+        .search-box {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+        .search-box:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .clear-btn {
+            margin-top: 1rem;
+            padding: 0.5rem 1rem;
+            background: #f56565;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .clear-btn:hover {
+            background: #e53e3e;
+        }
+        .entries-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+        .entry-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.2s ease;
+        }
+        .entry-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+        .entry-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid #f7fafc;
+        }
+        .entry-date {
+            font-weight: 700;
+            color: #667eea;
+            font-size: 1.1rem;
+        }
+        .entry-stamps {
+            display: flex;
+            gap: 0.5rem;
+            font-size: 1.5rem;
+        }
+        .entry-text {
+            color: #4a5568;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+        .no-entries {
+            text-align: center;
+            color: #718096;
+            padding: 3rem;
+            font-size: 1.1rem;
+        }
+        .loading {
+            text-align: center;
+            color: #718096;
+            padding: 3rem;
+            font-size: 1.1rem;
+        }
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 8px;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+        .stat-label {
+            font-size: 0.9rem;
+            color: #718096;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <h1>📖 日記を読む</h1>
+    <a href="diary.html" class="back-link">← カレンダーに戻る</a>
+</header>
+
+<main>
+    <div class="filter-panel">
+        <div class="filter-section">
+            <div class="filter-title">🔍 スタンプで絞り込み（クリックして選択）</div>
+            <div class="emoji-filter" id="emojiFilter"></div>
+        </div>
+        <div class="filter-section">
+            <div class="filter-title">🔎 キーワード検索</div>
+            <input type="text" class="search-box" id="searchBox" placeholder="日記のテキストを検索...">
+        </div>
+        <button class="clear-btn" id="clearBtn">フィルタをクリア</button>
+    </div>
+
+    <div class="entries-container">
+        <div class="stats" id="stats">
+            <div class="stat-item">
+                <div class="stat-number" id="totalEntries">-</div>
+                <div class="stat-label">総日記数</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="filteredEntries">-</div>
+                <div class="stat-label">表示中</div>
+            </div>
+        </div>
+        <div id="loadingIndicator" class="loading">日記を読み込み中...</div>
+        <div id="entriesList"></div>
+    </div>
+</main>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
+
+// ★githubアップ時に忘れず消すこと！★
+const firebaseConfig = {
+    apiKey: "",
+    authDomain: "",
+    projectId: "",
+    storageBucket: "",
+    messagingSenderId: "",
+    appId: "",
+    measurementId: ""
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+const allStamps = [
+    "😀","😭","😡","😍","🤔","😴","🤯","🥳","😅","🤗","🤩","😱","🤤","🥺","🥶","🥵",
+    "📚","📖","📝","💻","💯","💤","🖊","📊","📡","📰","🌐","🔬","🔭","⚛️","🔢","➗","🧮","🧪","🎓",
+    "💊","🥗","🥗","🚶‍♀️","🏃‍♂️","🛌","🤒","🤧","🤕","🧘","💪","🩺",
+    "🗑","🧺","🧹","🛒","🍳","🧽","💸","📦","🪴","🚪","🛠","🧯",
+    "🎬","🎮","🎵","📷","🛍","🎨","🎤","✈️",
+    "🍛","🍣","🍕","🍔","🍩","🍜","🥟","🫖"
+];
+
+let allEntries = [];
+let filteredEntries = [];
+let selectedEmojis = new Set();
+
+onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+        await signInAnonymously(auth);
+        return;
+    }
+    await loadAllEntries(user);
+});
+
+async function loadAllEntries(user) {
+    try {
+        // 🔹 Firestore構造に合わせて修正
+        const stampsRef = collection(db, "users", user.uid, "stamps");
+        const diaryRef = collection(db, "users", user.uid, "diary");
+
+        const [stampsSnapshot, diarySnapshot] = await Promise.all([
+        getDocs(stampsRef),
+        getDocs(diaryRef)
+        ]);
+
+        const stampsByDate = {};
+        stampsSnapshot.forEach(doc => {
+            const data = doc.data();
+            if (data.emoji) {
+                const dateKey = doc.id.split('_')[0];
+                if (!stampsByDate[dateKey]) stampsByDate[dateKey] = [];
+                stampsByDate[dateKey].push(data.emoji);
+            }
+        });
+
+        const textsByDate = {};
+        diarySnapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.text && data.text.trim()) {
+            textsByDate[doc.id] = data.text;
+        }
+        });
+
+        allEntries = [];
+        const allDates = new Set([...Object.keys(stampsByDate), ...Object.keys(textsByDate)]);
+
+        allDates.forEach(dateKey => {
+        const entry = {
+            date: dateKey,
+            stamps: stampsByDate[dateKey] || [],
+            text: textsByDate[dateKey] || ""
+        };
+        if (entry.stamps.length > 0 || entry.text) {
+            allEntries.push(entry);
+        }
+        });
+
+        allEntries.sort((a, b) => b.date.localeCompare(a.date));
+
+        buildEmojiFilter();
+        filterEntries();
+        hideLoading();
+    } catch (error) {
+        console.error("データ読み込みエラー:", error);
+        document.getElementById("loadingIndicator").textContent = "データの読み込みに失敗しました";
+    }
+}
+
+function buildEmojiFilter() {
+    const container = document.getElementById("emojiFilter");
+    allStamps.forEach(emoji => {
+        const btn = document.createElement("button");
+        btn.className = "emoji-btn";
+        btn.textContent = emoji;
+        btn.addEventListener("click", () => {
+        btn.classList.toggle("active");
+        if (selectedEmojis.has(emoji)) {
+            selectedEmojis.delete(emoji);
+        } else {
+            selectedEmojis.add(emoji);
+        }
+        filterEntries();
+        });
+        container.appendChild(btn);
+    });
+}
+
+function filterEntries() {
+    const keyword = document.getElementById("searchBox").value.toLowerCase();
+
+    filteredEntries = allEntries.filter(entry => {
+        if (selectedEmojis.size > 0) {
+        const hasSelectedEmoji = entry.stamps.some(stamp => selectedEmojis.has(stamp));
+        if (!hasSelectedEmoji) return false;
+        }
+
+        if (keyword) {
+        if (!entry.text.toLowerCase().includes(keyword)) return false;
+        }
+
+        return true;
+    });
+
+    displayEntries();
+    updateStats();
+}
+
+function displayEntries() {
+    const container = document.getElementById("entriesList");
+
+    if (filteredEntries.length === 0) {
+        container.innerHTML = '<div class="no-entries">該当する日記が見つかりませんでした</div>';
+        return;
+    }
+
+    container.innerHTML = filteredEntries.map(entry => `
+        <div class="entry-card">
+        <div class="entry-header">
+            <div class="entry-date">${formatDate(entry.date)}</div>
+            <div class="entry-stamps">${entry.stamps.join(' ')}</div>
+        </div>
+        <div class="entry-text">${entry.text || '<span style="color:#a0aec0;">（テキストなし）</span>'}</div>
+        </div>
+    `).join('');
+}
+
+function formatDate(dateStr) {
+    const [year, month, day] = dateStr.split('-');
+    return `${year}年${parseInt(month)}月${parseInt(day)}日`;
+}
+
+function updateStats() {
+    document.getElementById("totalEntries").textContent = allEntries.length;
+    document.getElementById("filteredEntries").textContent = filteredEntries.length;
+}
+
+function hideLoading() {
+    document.getElementById("loadingIndicator").style.display = "none";
+}
+
+document.getElementById("searchBox").addEventListener("input", filterEntries);
+
+document.getElementById("clearBtn").addEventListener("click", () => {
+    selectedEmojis.clear();
+    document.querySelectorAll(".emoji-btn.active").forEach(btn => btn.classList.remove("active"));
+    document.getElementById("searchBox").value = "";
+    filterEntries();
+});
+
+// ⏳ アイドル検出
+let idleTimer;
+const IDLE_TIMEOUT = 1000 * 60 * 10;
+
+const resetIdleTimer = () => {
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(async () => {
+        await signOut(auth);
+        alert("10分間操作がなかったため自動ログアウトされました。");
+        location.href = "https://mikatea.sakura.ne.jp/Adeline/index/index.html";
+    }, IDLE_TIMEOUT);
+};
+
+</script>

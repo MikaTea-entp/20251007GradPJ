@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" href="https://mikatea.sakura.ne.jp/Adeline/auth/favicon.ico" type="image/x-icon">
+<title>企画書提出フォーム</title>
+<style>
+body {
+    font-family: "Helvetica", "Arial", sans-serif;
+    background: url("./sandiego_img.jpg") center center / cover no-repeat fixed;
+    padding: 2rem;
+}
+.container {
+    max-width: 600px;
+    margin: auto;
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+h1 {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+label {
+    display: block;
+    margin-top: 1rem;
+    font-weight: bold;
+}
+input[type="text"],
+textarea,
+input[type="file"] {
+    width: 100%;
+    padding: 0.6rem;
+    margin-top: 0.4rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+button {
+    margin-top: 1.5rem;
+    width: 100%;
+    padding: 0.8rem;
+    border: none;
+    background: #1976d2;
+    color: white;
+    font-size: 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+}
+button:hover {
+    background: #125a9c;
+}
+#status {
+    margin-top: 1rem;
+    font-weight: bold;
+    text-align: center;
+}
+</style>
+
+
+</head>
+<body>
+<div class="container">
+    <h1>📑 企画書提出フォーム</h1>
+
+    <form id="proposalForm">
+        <label for="title">企画書タイトル</label>
+        <input type="text" id="title" name="title" required />
+
+        <label for="summary">概要</label>
+        <textarea id="summary" name="summary" rows="4" required></textarea>
+
+        <label for="file">企画書ファイル（PDF）</label>
+        <input type="file" id="file" name="file" accept="application/pdf" required />
+
+        <button type="submit">提出する</button>
+    </form>
+
+    <div id="status"></div>
+</div>
+
+<!-- Firebase SDKs -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
+import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-storage.js";
+
+// Firebase config
+// ★githubアップ時に忘れず消すこと！★
+const firebaseConfig = {
+    apiKey: "",
+    authDomain: "",
+    projectId: "",
+    storageBucket: "",
+    messagingSenderId: "",
+    appId: "",
+    measurementId: ""
+};
+
+// Initialize
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const storage = getStorage(app);
+
+const form = document.getElementById("proposalForm");
+const statusDiv = document.getElementById("status");
+
+// フォーム送信
+form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const user = auth.currentUser;
+    if (!user) {
+        statusDiv.textContent = "⚠️ ログインしてから提出してください。";
+        return;
+    }
+
+    const title = document.getElementById("title").value.trim();
+    const summary = document.getElementById("summary").value.trim();
+    const file = document.getElementById("file").files[0];
+
+    if (!file) {
+        statusDiv.textContent = "⚠️ PDFファイルを選択してください。";
+        return;
+    }
+
+    try {
+        // ストレージ参照
+        const storageRef = ref(storage, `proposals/${user.uid}/${Date.now()}_${file.name}`);
+        // アップロード
+        await uploadBytes(storageRef, file);
+        // 公開URL取得
+        const downloadURL = await getDownloadURL(storageRef);
+        // Firestoreに保存
+        await addDoc(collection(db, "proposals"), {
+            userId: user.uid,
+            title: title,
+            summary: summary,
+            fileUrl: downloadURL,
+            createdAt: serverTimestamp()
+        });
+
+        statusDiv.textContent = "✅ 提出が完了しました！";
+        form.reset();
+
+    } catch (err) {
+        console.error("Error uploading file:", err);
+        statusDiv.textContent = "❌ エラーが発生しました: " + err.message;
+    }
+});
+
+// アイドル検出（10分）
+let idleTimer;
+const IDLE_TIMEOUT = 1000 * 60 * 10;
+const resetIdleTimer = () => {
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(async () => {
+        await signOut(auth);
+        alert("10分間操作がなかったため自動ログアウトされました。");
+        location.href = "https://mikatea.sakura.ne.jp/Adeline/index/index.html";
+    }, IDLE_TIMEOUT);
+};
+["mousemove", "keydown", "click", "scroll"].forEach(evt => {
+    document.addEventListener(evt, resetIdleTimer, false);
+});
+resetIdleTimer();
+
+// 認証チェック
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        console.log("ログイン中:", user.email);
+    } else {
+        console.log("ログインしていません");
+    }
+});
+</script>
+</body>
+</html>

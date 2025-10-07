@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>リビルドログ</title>
+    <link rel="stylesheet" href="./rebuild_style.css">
+    <link rel="icon" href="https://mikatea.sakura.ne.jp/Adeline/auth/favicon.ico" type="image/x-icon">
+</head>
+
+<body>
+<div class="log-section">
+    <h1>📈 リビルドログ</h1>
+    <p>あなたのログイン履歴を表示します。</p>
+    <ul id="logList"></ul>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
+import { getFirestore, collection, query, where, orderBy, getDocs } 
+    from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+
+// ★githubアップ時に忘れず消すこと！★
+const firebaseConfig = {
+    apiKey: "",
+    authDomain: "",
+    projectId: "",
+    storageBucket: "",
+    messagingSenderId: "",
+    appId: "",
+    measurementId: ""
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+    onAuthStateChanged(auth, async (user) => {
+        if (!user) {
+            location.href = "../auth/auth.html";
+            return;
+        }
+
+        try {
+            const q = query(
+                collection(db, "users", user.uid, "logs"),
+                orderBy("timestamp", "desc")
+            );
+            const snap = await getDocs(q);
+            const list = document.getElementById("logList");
+
+            list.innerHTML = "";
+
+            if (snap.empty) {
+                list.innerHTML = "<li>履歴がまだありません。</li>";
+                return;
+            }
+
+            snap.forEach(doc => {
+                const data = doc.data();
+                const li = document.createElement("li");
+                const formatted = data.timestamp?.toDate().toLocaleString("ja-JP", {
+                    year: 'numeric', month: '2-digit', day: '2-digit',
+                    hour: '2-digit', minute: '2-digit', second: '2-digit'
+                });
+                li.textContent = `${data.action} @ ${formatted}`;
+                list.appendChild(li);
+            });
+        } catch (e) {
+            console.error("ログ取得エラー:", e);
+            alert("ログの取得に失敗しました。");
+        }
+    });
+
+    // ⏳ アイドル検出（操作がなければ自動ログアウト）
+    let idleTimer;
+    const IDLE_TIMEOUT = 1000 * 60 * 10; // 10分（ミリ秒）
+
+    const resetIdleTimer = () => {
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(async () => {
+            await signOut(auth);
+            alert("10分間操作がなかったため自動ログアウトされました。");
+            location.href = "https://mikatea.sakura.ne.jp/Adeline/index/index.html";
+        }, IDLE_TIMEOUT);
+    };
+
+    ["mousemove", "keydown", "click", "scroll"].forEach(evt => {
+        document.addEventListener(evt, resetIdleTimer, false);
+    });
+</script>
+</body>
+</html>

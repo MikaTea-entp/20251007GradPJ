@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="https://mikatea.sakura.ne.jp/Adeline/auth/favicon.ico" type="image/x-icon">
+    <title>Define</title>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+1p:wght@400;700&display=swap" rel="stylesheet">
+<style>
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    body {
+        font-family: 'M PLUS 1p', sans-serif;
+        background-image: url("./nv.webp");
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+        min-height: 100vh;
+        color: #edf2f7;
+        padding: 2rem 1rem;
+        position: relative;
+    }
+
+    body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background: linear-gradient(to bottom, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.6));
+        z-index: -1;
+    }
+
+    .container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    header {
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(10px);
+        padding: 2rem;
+        text-align: center;
+        border-radius: 16px;
+        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.4);
+        margin-bottom: 2rem;
+        color: #f7fafc;
+    }
+
+    h1 {
+        color: #fefefe;
+        font-size: 1.9rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .subtitle {
+        color: #e2e8f0;
+        font-size: 1rem;
+    }
+
+    .nav-links {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+
+    .nav-link {
+        color: #fbd38d;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: opacity 0.2s ease;
+    }
+
+    .nav-link:hover {
+        opacity: 0.8;
+        text-decoration: underline;
+    }
+
+    .form-section {
+        background: rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(8px);
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    .section-title {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #fbd38d;
+        margin-bottom: 0.5rem;
+    }
+
+    .section-desc {
+        font-size: 0.9rem;
+        color: #e2e8f0;
+        margin-bottom: 1rem;
+        line-height: 1.6;
+    }
+
+    textarea {
+        width: 100%;
+        padding: 1rem;
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+        font-size: 1rem;
+        font-family: inherit;
+        resize: vertical;
+        min-height: 120px;
+        background: rgba(255, 255, 255, 0.1);
+        color: #fefefe;
+        transition: all 0.3s ease;
+    }
+
+    textarea:focus {
+        outline: none;
+        border-color: #fbd38d;
+        background: rgba(255, 255, 255, 0.15);
+    }
+
+    textarea.saved {
+        border-color: #48bb78;
+        animation: pulse 0.5s ease;
+    }
+
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.02); }
+    }
+
+    .char-counter {
+        text-align: right;
+        font-size: 0.85rem;
+        color: #cbd5e0;
+        margin-top: 0.25rem;
+    }
+
+    .save-btn {
+        width: 100%;
+        padding: 1rem;
+        background: linear-gradient(135deg, #f6ad55, #ed8936);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 1.1rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(237, 137, 54, 0.4);
+    }
+
+    .save-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(237, 137, 54, 0.5);
+    }
+
+    .save-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .status-message {
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin-bottom: 1.5rem;
+        text-align: center;
+        font-weight: 700;
+        font-size: 1.1rem;
+        display: none;
+        animation: slideDown 0.3s ease;
+    }
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .status-message.success {
+        background: rgba(72, 187, 120, 0.3);
+        border: 2px solid #48bb78;
+        color: #f0fff4;
+        display: block;
+    }
+
+    .status-message.error {
+        background: rgba(245, 101, 101, 0.3);
+        border: 2px solid #f56565;
+        color: #fff5f5;
+        display: block;
+    }
+
+    .loading {
+        text-align: center;
+        color: #e2e8f0;
+        padding: 2rem;
+    }
+</style>
+
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>🎯 課題を定義する</h1>
+        <p class="subtitle">日記から見つけた気づきを整理し、取り組むべき課題を明確にしましょう</p>
+        <div class="nav-links">
+            <a href="diary.html" class="nav-link">← カレンダー</a>
+            <a href="readdiary.html" class="nav-link">日記を読む</a>
+            <a href="../start/start.html" class="nav-link">ホームへ →</a>
+        </div>
+    </header>
+
+    <div id="loadingIndicator" class="loading">読み込み中...</div>
+    <div id="statusMessage" class="status-message"></div>
+
+    <div id="formContainer" style="display: none;">
+        <div class="form-section">
+            <div class="section-title">1. 日記から気づいたこと</div>
+            <div class="section-desc">日記を振り返って気づいたパターンや繰り返し出てくる問題を書き出してください</div>
+            <textarea id="observations" placeholder="例：忙しい日は睡眠不足になる、週末に計画を立てられない、など"></textarea>
+            <div class="char-counter"><span id="obsCount">0</span>/500</div>
+        </div>
+
+        <div class="form-section">
+            <div class="section-title">2. 本当の問題は何か</div>
+            <div class="section-desc">表面的な現象の裏にある、根本的な問題を考えてみましょう</div>
+            <textarea id="rootProblem" placeholder="例：時間管理ができていない、優先順位が不明確、など"></textarea>
+            <div class="char-counter"><span id="rootCount">0</span>/500</div>
+        </div>
+
+        <div class="form-section">
+            <div class="section-title">3. 理想の状態</div>
+            <div class="section-desc">この問題が解決したら、どんな状態になっていたいですか</div>
+            <textarea id="idealState" placeholder="例：毎日7時間睡眠を確保できている、週の予定を把握している、など"></textarea>
+            <div class="char-counter"><span id="idealCount">0</span>/500</div>
+        </div>
+
+        <div class="form-section">
+            <div class="section-title">4. 課題の定義</div>
+            <div class="section-desc">上記を踏まえて、あなたが取り組むべき課題を一文で表現してください</div>
+            <textarea id="definition" placeholder="例：効果的な時間管理の仕組みを作り、安定した生活リズムを確立する"></textarea>
+            <div class="char-counter"><span id="defCount">0</span>/300</div>
+        </div>
+
+        <button class="save-btn" id="saveBtn">保存する</button>
+    </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
+
+// ★githubアップ時に忘れず消すこと！★
+const firebaseConfig = {
+    apiKey: "",
+    authDomain: "",
+    projectId: "",
+    storageBucket: "",
+    messagingSenderId: "",
+    appId: "",
+    measurementId: ""
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+let currentUser = null;
+
+const textareas = {
+    observations: document.getElementById('observations'),
+    rootProblem: document.getElementById('rootProblem'),
+    idealState: document.getElementById('idealState'),
+    definition: document.getElementById('definition')
+};
+
+const counters = {
+    observations: document.getElementById('obsCount'),
+    rootProblem: document.getElementById('rootCount'),
+    idealState: document.getElementById('idealCount'),
+    definition: document.getElementById('defCount')
+};
+
+const maxLengths = {
+    observations: 500,
+    rootProblem: 500,
+    idealState: 500,
+    definition: 300
+};
+
+// サニタイジング関数
+function sanitize(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+Object.keys(textareas).forEach(key => {
+    textareas[key].addEventListener('input', () => {
+        const length = textareas[key].value.length;
+        counters[key].textContent = length;
+        
+        if (length > maxLengths[key]) {
+            textareas[key].value = textareas[key].value.substring(0, maxLengths[key]);
+            counters[key].textContent = maxLengths[key];
+        }
+    });
+});
+
+onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+        await signInAnonymously(auth);
+        return;
+    }
+    
+    currentUser = user;
+    await loadDefinition();
+    document.getElementById('loadingIndicator').style.display = 'none';
+    document.getElementById('formContainer').style.display = 'block';
+});
+
+async function loadDefinition() {
+    try {
+        const docRef = doc(db, "users", currentUser.uid, "definitions", "current");
+        const docSnap = await getDoc(docRef);
+        
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            // データ読み込み時はサニタイズ不要（Firestoreから取得した自分のデータ）
+            textareas.observations.value = data.observations || '';
+            textareas.rootProblem.value = data.rootProblem || '';
+            textareas.idealState.value = data.idealState || '';
+            textareas.definition.value = data.definition || '';
+            
+            Object.keys(counters).forEach(key => {
+                counters[key].textContent = textareas[key].value.length;
+            });
+        }
+    } catch (error) {
+        console.error("読み込みエラー:", error);
+    }
+}
+
+document.getElementById('saveBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('saveBtn');
+    const statusMsg = document.getElementById('statusMessage');
+
+    if (!currentUser) {
+        statusMsg.className = 'status-message error';
+        statusMsg.textContent = 'ユーザーが認証されていません';
+        return;
+    }
+
+btn.disabled = true;
+btn.textContent = '保存中...';
+statusMsg.style.display = 'none';
+
+try {
+    const docRef = doc(db, "users", currentUser.uid, "definitions", "current");
+    await setDoc(docRef, {
+        observations: textareas.observations.value,
+        rootProblem: textareas.rootProblem.value,
+        idealState: textareas.idealState.value,
+        definition: textareas.definition.value,
+        updatedAt: new Date(),
+        userId: currentUser.uid
+    });
+
+    // 成功メッセージ
+    statusMsg.className = 'status-message success';
+    statusMsg.textContent = '✓ 保存しました';
+    statusMsg.style.display = 'block';
+
+    // 入力フォームをクリア
+    Object.keys(textareas).forEach(key => {
+        textareas[key].value = '';
+        counters[key].textContent = '0';
+    });
+
+    // 3秒後にメッセージを消す
+    setTimeout(() => {
+        statusMsg.style.display = 'none';
+    }, 3000);
+
+    } catch (error) {
+        console.error("保存エラー:", error);
+        statusMsg.className = 'status-message error';
+        statusMsg.textContent = '✗ 保存に失敗しました: ' + error.message;
+        statusMsg.style.display = 'block';
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '保存する';
+    }
+});
+
+// ⏳ アイドル検出
+let idleTimer;
+const IDLE_TIMEOUT = 1000 * 60 * 10;
+
+const resetIdleTimer = () => {
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(async () => {
+        await signOut(auth);
+        alert("10分間操作がなかったため自動ログアウトされました。");
+        location.href = "https://mikatea.sakura.ne.jp/Adeline/index/index.html";
+    }, IDLE_TIMEOUT);
+};
+
+</script>
+</body>
+</html>

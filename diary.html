@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Stamp Diary</title>
+  <link rel="icon" href="https://mikatea.sakura.ne.jp/Adeline/auth/favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="diary_style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+1p:wght@400;700&family=Yomogi&display=swap" rel="stylesheet" />
+</head>
+<body>
+<header>
+  <h1>📅 Stamp Diary</h1>
+</header>
+
+<main>
+  <div class="calendar-container">
+    <div id="loadingIndicator" class="loading">カレンダーを読み込み中...</div>
+    <div id="errorMessage" class="error" style="display: none;"></div>
+    <table id="calendar" aria-label="calendar" style="display: none;">
+      <thead>
+        <tr>
+          <th>日</th><th>月</th><th>火</th><th>水</th><th>木</th><th>金</th><th>土</th>
+        </tr>
+      </thead>
+      <tbody id="calendarBody"></tbody>
+    </table>
+  </div>
+</main>
+
+<div id="stampPalette" role="dialog" aria-modal="true"></div>
+
+<footer class="controls">
+  <button id="prevMonth" class="btn">← 前月</button>
+  <button id="toThisMonth" class="btn">今月に戻る</button>
+  <button id="nextMonth" class="btn">翌月 →</button>
+</footer>
+
+<script type="module" src="diary.js"></script>
+</body>
+</html>

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>企業からのフィードバック</title>
+<link rel="icon" href="https://mikatea.sakura.ne.jp/Adeline/auth/favicon.ico" type="image/x-icon">
+<style>
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: url("./Stanford_Univ.webp") center center / cover no-repeat fixed;
+    margin: 0;
+    padding: 2rem;
+    color: #333;
+}
+h1 {
+    text-align: center;
+    font-size: 2rem;
+    font-weight: bold;
+    color: #222;
+    background: rgba(255,255,255,0.8);
+    display: block;
+    width: fit-content;
+    margin: 0 auto 2rem auto;
+    padding: 0.5em 1.2em;
+    border-radius: 10px;
+    text-shadow: 1px 1px 4px rgba(0,0,0,0.3);
+}
+.feedback-card {
+    max-width: 700px;
+    margin: 0 auto 2rem auto;
+    background: rgba(255, 255, 255, 0.92);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+}
+.feedback-card h2 {
+    margin-top: 0;
+    font-size: 1.25rem;
+    color: #111;
+}
+.idea, .response {
+    margin: 1rem 0;
+    padding: 1rem;
+    border-radius: 8px;
+}
+.idea {
+    background: #f7f7f7;
+    border-left: 4px solid #00BBF9;
+}
+.response {
+    background: #eefafc;
+    border-left: 4px solid #009ccf;
+}
+.back-link {
+    display: block;
+    text-align: center;
+    margin-top: 3rem;
+    color: #0366d6;
+    font-weight: bold;
+    text-decoration: none;
+}
+.back-link:hover {
+    text-decoration: underline;
+}
+@media (max-width: 600px) {
+    body { padding: 1rem; }
+    .feedback-card { padding: 1rem; }
+}
+</style>
+</head>
+<body>
+<h1>協創フィードバック</h1>
+
+<div class="feedback-card">
+    <h2>株式会社Savants</h2>
+    <div class="idea">
+        <strong>あなたの提案:</strong>
+        <p>大学生向けに共創型ラーニングプラットフォームを立ち上げるのはどうでしょうか？</p>
+    </div>
+    <div class="response">
+        <strong>企業からのコメント:</strong>
+        <p>とても興味深いアイデアですね！教育領域での共創は弊社のミッションにも近いです。今後検討させていただきます。</p>
+    </div>
+</div>
+
+<div class="feedback-card">
+    <h2>Re:Plant Inc.</h2>
+    <div class="idea">
+        <strong>あなたの提案:</strong>
+        <p>農家向けに気候データを活用したダッシュボードを提供するのはどうですか？</p>
+    </div>
+    <div class="response">
+        <strong>企業からのコメント:</strong>
+        <p>ありがとうございます！再生型農業との相性が良さそうです。次回の社内ミーティングで議題にします。</p>
+    </div>
+</div>
+
+<div class="feedback-card">
+    <h2>Synexa Labs</h2>
+    <div class="idea">
+        <strong>あなたの提案:</strong>
+        <p>脳波から感情を読み取って、音楽体験を変えるアプリを作りたいです。</p>
+    </div>
+    <div class="response">
+        <strong>企業からのコメント:</strong>
+        <p>面白い着想ですね！当社の研究領域とも重なります。技術的な検討を進めてみます。</p>
+    </div>
+</div>
+
+<a href="../collaborate/match.html" class="back-link">← スポンサー企業一覧に戻る</a>
+</body>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+// ★githubアップ時に忘れず消すこと！★
+const firebaseConfig = {
+    apiKey: "",
+    authDomain: "",
+    projectId: "",
+    storageBucket: "",
+    messagingSenderId: "",
+    appId: "",
+    measurementId: ""
+};
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // ログイン状態の確認
+    onAuthStateChanged(auth, user => {
+        if (!user) {
+            alert("ログインが必要です。ログインページに移動します。");
+            location.href = "../index/index.html";
+        }
+    });
+
+    // ⏳ アイドル検出
+    let idleTimer;
+    const IDLE_TIMEOUT = 1000 * 60 * 10;
+
+    const resetIdleTimer = () => {
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(async () => {
+            await signOut(auth);
+            alert("10分間操作がなかったため自動ログアウトされました。");
+            location.href = "https://mikatea.sakura.ne.jp/Adeline/index/index.html";
+        }, IDLE_TIMEOUT);
+    };
+
+    ["mousemove", "keydown", "click", "scroll"].forEach(evt => {
+        document.addEventListener(evt, resetIdleTimer, false);
+    });
+</script>
+
+</html>

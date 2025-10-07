@@ -1,0 +1,99 @@
+/* リセット */
+@import url('./reset.css');
+
+body {
+    font-family: 'M PLUS Rounded 1c', sans-serif;
+    background: url("./VeniceBeach.jpg") no-repeat center center fixed;
+    background-size: cover;
+    color: #333;
+    padding: 2rem;
+    max-width: 800px;
+    margin: auto;
+}
+
+h1 {
+    font-size: 1.8rem;
+    text-align: center;
+    color: #fff; /* 白文字 */
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5); /* 黒っぽい影でクッキリ */
+    margin-bottom: 2rem;
+}
+
+/* 質問パネル */
+.question {
+    background: #fff;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.2rem;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.question p {
+    font-weight: bold;
+    margin-bottom: 0.8rem;
+    color: #2c3e50;
+}
+
+/* リッカート尺度 */
+.scale {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.scale label {
+    flex: 1;
+    text-align: center;
+    background: #e6eefc;
+    border-radius: 6px;
+    padding: 0.5rem;
+    transition: background 0.2s;
+    cursor: pointer;
+}
+
+.scale label:hover {
+    background: #cde1f9;
+}
+
+.scale input[type="radio"] {
+    display: none;
+}
+
+.scale input[type="radio"]:checked + span {
+    background: #3F88C5;
+    color: white;
+    font-weight: bold;
+}
+
+/* 診断ボタン */
+button {
+    display: block;
+    margin: 2rem auto;
+    background: #1a237e;
+    color: white;
+    padding: 0.8rem 2rem;
+    border: none;
+    border-radius: 6px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+button:hover {
+    background: #2a6baa;
+}
+
+/* 結果表示 */
+.result {
+    margin-top: 2rem;
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #2c3e50;
+    background: #ffffff;
+    border-left: 6px solid #3F88C5;
+    padding: 1rem;
+    border-radius: 6px;
+}

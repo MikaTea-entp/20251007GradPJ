@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<title>16タイプ性格診断</title>
+    <link rel="stylesheet" href="reset.css" />
+    <link rel="stylesheet" href="mbti_style.css" />
+    <link rel="icon" href="https://mikatea.sakura.ne.jp/Adeline/auth/favicon.ico" type="image/x-icon">
+<style>
+body { font-family: sans-serif; max-width: 700px; margin: 20px auto; }
+h1 { text-align: center; }
+    .question { margin: 20px 0; }
+    .scale { display: flex; justify-content: space-between; margin-top: 8px; }
+    .scale label {
+        flex: 1;
+        text-align: center;
+        background: #eef2f7;
+        padding: 10px;
+        border-radius: 6px;
+        margin: 0 2px;
+        cursor: pointer;
+    }
+    .scale-labels {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.9rem;
+        color: #666;
+        margin-top: 4px;
+    }
+    .scale-hint {
+        font-size: 0.85rem;
+        color: #999;
+        margin-top: 4px;
+    }
+button {
+        margin: 40px auto 20px;
+        padding: 10px 30px;
+        display: block;
+        background-color: #1e88e5;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 1rem;
+        cursor: pointer;
+    }
+    .result {
+        margin-top: 30px;
+        font-weight: bold;
+        font-size: 1.2rem;
+        text-align: center;
+    }
+    .summary-note {
+        font-size: 0.85rem;
+        color: #777;
+        text-align: center;
+        margin-top: 20px;
+    }
+</style>
+</head>
+<body>
+
+<h1>性格タイプ診断</h1>
+
+<form id="mbtiForm"></form>
+<button type="button" onclick="calculateMBTI()">診断する</button>
+<div class="result" id="result"></div>
+
+<script>
+    const explanations = {
+        'ISTJ': 'ロジスティシャンは現実的かつファクト重視の気質があり、とても頼りがいがあります。',
+        'ESTJ': '幹部は“まとめ役”として非常に優れていて、人やものごとを管理するのが飛び抜けて上手です。',
+        'ISFJ': '擁護者は献身的かつ友好的で、周りの人を守ります。',
+        'ESFJ': '領事は面倒見が良く、社交的でコミュニティを大切にします。',
+        'ISTP': '巨匠は独創的かつ現実的で、新しいことを試すのが大好きです。',
+        'ESTP': '起業家はエネルギッシュで洞察力が鋭く、危険も楽しみます。',
+        'ISFP': '冒険家は柔軟で魅力的、探究心旺盛です。',
+        'ESFP': 'エンターテイナーは熱意にあふれ、周囲を楽しませます。',
+        'INFJ': '提唱者は静かなビジョナリーで理想主義的です。',
+        'ENFJ': '主人公は楽観的で周囲をインスパイアします。',
+        'INFP': '仲介者は優しく詩的で、大義を重んじます。',
+        'ENFP': '運動家は自由奔放でクリエイティブ、社交的です。',
+        'INTJ': '建築家は独創的かつ戦略的で計画的です。',
+        'ENTJ': '指揮官は大胆で意思が強く、解決力に優れます。',
+        'INTP': '論理学者は創造力豊かで知識欲が強いです。',
+        'ENTP': '討論者は好奇心旺盛で知的な難題が大好きです。'
+    };
+
+    const questions = [
+        {axis: 'EI', text: '私は社交的であることが多い'},
+        {axis: 'EI', text: '人と話すことでエネルギーを得る'},
+        {axis: 'EI', text: '一人でいるより集団でいる方が好き'},
+        {axis: 'EI', text: '初対面の人とも打ち解けやすい'},
+        {axis: 'EI', text: '外向的な活動が好き'},
+
+        {axis: 'SN', text: '事実やデータを重視する'},
+        {axis: 'SN', text: '未来より現在の状況に注意を払う'},
+        {axis: 'SN', text: '理論や抽象より具体例が好き'},
+        {axis: 'SN', text: '感覚で得た情報を信頼する'},
+        {axis: 'SN', text: '計画や手順を重視する'},
+
+        {axis: 'TF', text: '意思決定は論理的に行うことが多い'},
+        {axis: 'TF', text: '感情より合理性を優先する'},
+        {axis: 'TF', text: '対人関係よりタスク優先になることがある'},
+        {axis: 'TF', text: '物事を客観的に評価する'},
+        {axis: 'TF', text: '議論では感情より論理を重視する'},
+
+        {axis: 'JP', text: '計画を立てて行動する方が好き'},
+        {axis: 'JP', text: '締め切りを守ることを重視する'},
+        {axis: 'JP', text: '物事を整理してから進める'},
+        {axis: 'JP', text: 'ルールや秩序を尊重する'},
+        {axis: 'JP', text: '予想外よりも予測可能な生活が好ましい'}
+    ];
+
+    const form = document.getElementById('mbtiForm');
+    questions.forEach((q, i) => {
+        const div = document.createElement('div');
+        div.className = 'question';
+        div.innerHTML = `<p>${i + 1}. ${q.text}</p>
+                        <p class="scale-hint">※1 = まったく当てはまらない ／ 5 = 非常に当てはまる</p>`;
+
+    const scaleDiv = document.createElement('div');
+    scaleDiv.className = 'scale';
+
+    for (let j = 1; j <= 5; j++) {
+        const label = document.createElement('label');
+        label.innerHTML = `<input type="radio" name="q${i}" value="${j}"><span>${j}</span>`;
+        scaleDiv.appendChild(label);
+    }
+
+    const labelLine = document.createElement('div');
+    labelLine.className = 'scale-labels';
+    labelLine.innerHTML = `<span>まったく当てはまらない</span><span>非常に当てはまる</span>`;
+
+    div.appendChild(scaleDiv);
+    div.appendChild(labelLine);
+    form.appendChild(div);
+    });
+
+    function calculateMBTI() {
+        const scores = { EI: 0, SN: 0, TF: 0, JP: 0 };
+        for (let i = 0; i < questions.length; i++) {
+            const val = document.querySelector(`input[name="q${i}"]:checked`)?.value;
+            if (!val) {
+            alert('全ての質問に回答してください');
+            return;
+            }
+            scores[questions[i].axis] += parseInt(val);
+        }
+
+        const mbti =
+            (scores.EI > 15 ? 'E' : 'I') +
+            (scores.SN > 15 ? 'N' : 'S') +
+            (scores.TF > 15 ? 'T' : 'F') +
+            (scores.JP > 15 ? 'J' : 'P');
+
+        const explanation = explanations[mbti] || 'このタイプの説明はまだありません。';
+        document.getElementById('result').innerHTML =
+            `あなたのMBTIタイプは <b>${mbti}</b> です！<br>${explanation}`;
+    }
+
+// ⏳ アイドル検出
+let idleTimer;
+const IDLE_TIMEOUT = 1000 * 60 * 10;
+
+const resetIdleTimer = () => {
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(async () => {
+        await signOut(auth);
+        alert("10分間操作がなかったため自動ログアウトされました。");
+        location.href = "https://mikatea.sakura.ne.jp/Adeline/index/index.html";
+    }, IDLE_TIMEOUT);
+};
+</script>
+
+</body>
+</html>

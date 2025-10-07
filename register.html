@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新規登録</title>
+    <link rel="stylesheet" href="auth_style.css">
+    <link rel="icon" href="https://mikatea.sakura.ne.jp/Adeline/auth/favicon.ico" type="image/x-icon">
+</head>
+
+<body>
+<main>
+    <div class="form-container">
+    <h2>📝 新規登録</h2>
+    <form id="registerForm">
+        <label for="username">ユーザー名</label>
+        <input type="text" id="username" placeholder="表示名" required>
+
+        <label for="userId">ユーザーID（@から始めないで）</label>
+        <input type="text" id="userId" placeholder="一意のID" required>
+
+        <label for="email">メール</label>
+        <input type="email" id="email" placeholder="you@example.com" required>
+
+        <label for="password">パスワード</label>
+        <input type="password" id="password" placeholder="******" required minlength="6">
+
+        <button type="submit" class="btn">登録する (Email/Password)</button>
+    </form>
+
+        <div class="help">
+            既にアカウントがある？ <a href="./auth.html">ログインへ</a><br>
+            パスワードを忘れた？ <a href="./reset.html">再設定</a><br>
+            ホームに戻る → <a href="../index/index.html">トップ</a>
+        </div>
+
+        <div id="msg"></div>
+    </div>
+</main>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, doc, runTransaction, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// ★githubアップ時に忘れず消すこと！★
+const firebaseConfig = {
+    apiKey: "",
+    authDomain: "",
+    projectId: "",
+    storageBucket: "",
+    messagingSenderId: "",
+    appId: "",
+    measurementId: ""
+};
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const msg = document.getElementById("msg");
+    const showMsg = (t, ok=false) => {
+        msg.textContent = t;
+        msg.className = ok ? "success" : "error";
+    };
+
+    document.getElementById("registerForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const username = document.getElementById("username").value.trim();
+        const userId   = document.getElementById("userId").value.trim();
+        const email    = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value;
+
+        if (!username || !userId || !email || !password) {
+            return showMsg("すべての項目を入力してください。");
+        }
+
+        try {
+            const cred = await createUserWithEmailAndPassword(auth, email, password);
+            const uid = cred.user.uid;
+
+            await updateProfile(cred.user, { displayName: username });
+
+            await runTransaction(db, async (transaction) => {
+                const unameRef = doc(db, "usernames", userId);
+                const unameSnap = await transaction.get(unameRef);
+                if (unameSnap.exists()) {
+                    throw new Error("このユーザーIDは既に使われています。");
+                }
+
+            transaction.set(unameRef, { uid });
+            transaction.set(doc(db, "users", uid), {
+                userId,
+                username,
+                email,
+                createdAt: serverTimestamp()
+            });
+            });
+
+            showMsg("登録完了！", true);
+            window.location.href = "../start/start.html";
+        } catch (e) {
+            console.error(e);
+            showMsg("登録失敗: " + e.message);
+        }
+    });
+</script>
+</body>
+</html>

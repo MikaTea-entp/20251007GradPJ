@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>パスワード再設定</title>
+    <link rel="icon" href="https://mikatea.sakura.ne.jp/Adeline/auth/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="./auth_style.css" />
+</head>
+
+<body>
+<main class="form-container">
+    <h2>🔑 パスワード再設定</h2>
+    
+    <label>
+        登録メールアドレス
+        <input type="email" id="email" placeholder="you@example.com" required />
+    </label>
+    
+    <button id="resetBtn" class="btn">再設定メール送信</button>
+    
+    <div class="help">
+        ログインは <a href="./auth.html">こちら</a> / 
+        新規登録は <a href="./register.html">こちら</a>
+    </div>
+
+    <div id="msg"></div>
+</main>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+    import { 
+        getAuth, 
+        sendPasswordResetEmail, 
+        onAuthStateChanged 
+    } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
+
+// ★githubアップ時に忘れず消すこと！★
+const firebaseConfig = {
+    apiKey: "",
+    authDomain: "",
+    projectId: "",
+    storageBucket: "",
+    messagingSenderId: "",
+    appId: "",
+    measurementId: ""
+};
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    const msg = document.getElementById("msg");
+    const showMsg = (t, ok=false) => {
+        msg.textContent = t;
+        msg.className = ok ? "success" : "error";
+    };
+
+    // 既ログインならホームへ
+    onAuthStateChanged(auth, user => { 
+        if (user) location.href = "./home.html"; 
+    });
+
+    // 再設定メール送信処理
+    document.getElementById("resetBtn").addEventListener("click", async () => {
+        const email = document.getElementById("email").value.trim();
+        if (!email) {
+        showMsg("メールアドレスを入力してください");
+        return;
+        }
+        try {
+        await sendPasswordResetEmail(auth, email);
+        showMsg("再設定メールを送信しました。受信箱をご確認ください。", true);
+        } catch (e) {
+        const map = {
+            "auth/invalid-email": "メールアドレスの形式が正しくありません。",
+            "auth/user-not-found": "このメールは登録されていません。"
+        };
+        showMsg(map[e.code] || `エラーが発生しました: ${e.code}`);
+        }
+    });
+
+</script>
+</body>
+</html>

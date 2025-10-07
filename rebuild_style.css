@@ -1,0 +1,75 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: url("./sanfrancisco_cablecar.jpg") center center / cover no-repeat fixed;
+    color: #333;
+    line-height: 1.6;
+    margin: 0;
+    padding: 2rem;
+}
+
+/* カード風セクション */
+.log-section {
+    background: rgba(255, 255, 255, 0.85); /* 半透明で統一 */
+    padding: 2rem;
+    margin: 2rem auto;
+    max-width: 700px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    text-align: center;
+}
+
+h1 {
+    font-size: 1.8rem;
+    margin-bottom: 0.5rem;
+    color: #222;
+}
+
+p {
+    margin-bottom: 1.5rem;
+    color: #555;
+}
+
+/* ログリスト */
+#logList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    text-align: left;
+}
+
+#logList li {
+    background: rgba(255, 255, 255, 0.97);
+    margin-bottom: 0.6rem;
+    padding: 0.8rem 1rem;
+    border-radius: 6px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+    font-size: 0.95rem;
+    transition: transform 0.2s ease;
+}
+
+#logList li:hover {
+    transform: scale(1.02);
+    background: #f0f7ff; /* hover時に少し青み */
+}
+
+/* スマホ対応 */
+@media (max-width: 600px) {
+    body {
+        padding: 0.5rem;
+    }
+    .log-section {
+        padding: 1rem;
+        margin: 1rem;
+        border-radius: 6px;
+    }
+    h1 {
+        font-size: 1.5rem;
+    }
+    p {
+        font-size: 0.9rem;
+    }
+    #logList li {
+        font-size: 0.9rem;
+        padding: 0.7rem;
+    }
+}
